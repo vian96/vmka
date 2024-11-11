@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -26,7 +27,6 @@ struct CmdEntry {
     InstrOpcodeNS::InstrOpcode opc;
     std::vector<int> args;
 };
-        std::unordered_map<int, size_t> labels_map;
 
 class Function {
 public:
@@ -35,6 +35,7 @@ public:
     size_t num_params;
     Function(size_t nvars, size_t nparams, std::vector<CmdEntry> cmds)
         : num_vars(nvars), num_params(nparams) {
+        std::unordered_map<int, size_t> labels_map;
         for (const auto &cmd:cmds) {
             int pc = code.size();
             switch (cmd.opc) {
@@ -75,13 +76,17 @@ public:
     }
 };
 
+// TODO move to class Executor instead of globals
+std::vector<Function*> functions = {nullptr};
+std::unordered_map<std::string, int> funcmap;
+
 class Frame {
 public:
-    Function *func;
+    const Function *func;
     std::vector<int32_t> vars;
     int pc;
     int new_pc;
-    void run() {
+    int run() {
         new_pc = 0;
         while (true) {
             pc = new_pc;
@@ -98,11 +103,11 @@ public:
             }
         }
     }
-    Frame(Function *func_) : func(func_), vars(std::vector<int32_t>(func->num_vars)), pc(0) {};
+    Frame(Function *func_) : func(func_), vars(std::vector<int32_t>(func->num_vars)), pc(0) {}
+    Frame(Function *func_, std::vector<int32_t> params) : func(func_), vars(std::vector<int32_t>(func->num_vars)), pc(0) {
+        std::copy(params.begin(), params.end(), vars.begin());
+    }
 };
-
-std::vector<Function*> functions;
-std::unordered_map<std::string, int> funcmap;
 
 int main() {
     int status=0;
@@ -145,9 +150,32 @@ int main() {
         {EXIT, {}}
     });
 
+    Function fib_rec_func(5, 1, {
+        // v0 n v1 n-1(-2) v2 fib(n-1) v3 fib(n-2) v4 -1holder
+        {STORE, {4, 1}},
+        {JLE, {0, 4, 's'}},
+        {STORE, {4, -1}},
+        {ADD, {0, 0, 4}},
+        {CALL1, {2, 1, 0}}, // fib(n-1)
+        {PRINT, {0}},
+        {PRINT, {2}},
+        {ADD, {0, 0, 4}},
+        {CALL1, {3, 1, 0}}, // fib(n-2)
+        {PRINT, {0}},
+        {PRINT, {3}},
+        {ADD, {2, 2, 3}},
+        {RET, {2}},
+        {LABEL, {'s'}},
+        {RET, {0}}
+    });
+
     Frame fr(&fib_iter_func);
     std::cout << "run\n";
-    fr.run();
+ //   fr.run();
+    std::cout << "recurs\n";
+    functions = {nullptr, &fib_rec_func};
+    Frame frec(&fib_rec_func, {11});
+    std::cout << frec.run();
     std::cout << "exit\n";
     return status;
 }
