@@ -29,4 +29,6 @@ _CMD_DEF_(JMP, 6, 5, _DO_JMP_, _PUSH_LABEL_OFFSET_)
 _CMD_DEF_(JEQ, 7, 7, {int lhs=_POP_VAR_VAL_; int rhs=_POP_VAR_VAL_; if (lhs==rhs) _DO_JMP_}, {_PUSH_VAR_ _PUSH_VAR_ _PUSH_LABEL_OFFSET_})
 _CMD_DEF_(JNE, 8, 7, {int lhs=_POP_VAR_VAL_; int rhs=_POP_VAR_VAL_; if (lhs!=rhs) _DO_JMP_}, {_PUSH_VAR_ _PUSH_VAR_ _PUSH_LABEL_OFFSET_})
 _CMD_DEF_(INPUT, 9, 2, {auto varind = _POP_VAR_ARG_; std::cout << "input: "; std::cin >> vars[varind];}, {_PUSH_VAR_})
-
+_CMD_DEF_(MOV, 10, 3, {int vard = _POP_VAR_ARG_; int src=_POP_VAR_VAL_; vars[vard] = src;}, {_PUSH_VAR_ _PUSH_VAR_})
+_CMD_DEF_(JLE, 11, 7, {int lhs=_POP_VAR_VAL_; int rhs=_POP_VAR_VAL_; if (lhs<=rhs) _DO_JMP_}, {_PUSH_VAR_ _PUSH_VAR_ _PUSH_LABEL_OFFSET_})
+ 

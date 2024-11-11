@@ -122,14 +122,30 @@ int main() {
     });
     Function sum_func(3, 0, {
         {STORE, {0, 10}},
-//        {STORE, {1, 17}},
         {INPUT, {1}},
         {ADD, {1, 1, 0}},
         {PRINT, {1}},
         {EXIT, {}}
     });
+    Function fib_iter_func(3, 0, {
+        // v0 i v1 n v2 f0 v3 f1 v4 t
+        {INPUT, {1}},
+        {STORE, {0, 2}},
+        {STORE, {2, 0}},
+        {STORE, {3, 1}},
+        {LABEL, {'l'}},
+        {ADD, {4, 2, 3}},
+//        {PRINT, {4}},
+        {MOV, {2, 3}},
+        {MOV, {3, 4}},
+        {INC, {0}},
+//        {PRINT, {3}},
+        {JLE, {0, 1, 'l'}},
+        {PRINT, {3}},
+        {EXIT, {}}
+    });
 
-    Frame fr(&sum_func);
+    Frame fr(&fib_iter_func);
     std::cout << "run\n";
     fr.run();
     std::cout << "exit\n";
