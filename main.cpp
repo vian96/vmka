@@ -120,7 +120,16 @@ int main() {
         {LABEL, {'e'}},
         {EXIT, {}}
     });
-    Frame fr(&main_func);
+    Function sum_func(3, 0, {
+        {STORE, {0, 10}},
+//        {STORE, {1, 17}},
+        {INPUT, {1}},
+        {ADD, {1, 1, 0}},
+        {PRINT, {1}},
+        {EXIT, {}}
+    });
+
+    Frame fr(&sum_func);
     std::cout << "run\n";
     fr.run();
     std::cout << "exit\n";
