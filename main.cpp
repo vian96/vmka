@@ -110,11 +110,12 @@ int main() {
     std::cout << "parse\n";
     Function main_func(3, 0, {
         {STORE, {0, 10}},
-        {STORE, {1, 17}},
+//        {STORE, {1, 17}},
+        {INPUT, {1}},
         {LABEL, {'s'}},
         {INC, {0}},
         {PRINT, {0}},
-        {JE, {0, 1, 'e'}},
+        {JEQ, {0, 1, 'e'}},
         {JMP, {'s'}},
         {LABEL, {'e'}},
         {EXIT, {}}
