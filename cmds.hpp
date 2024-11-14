@@ -7,9 +7,9 @@ _CMD_DEF_(name, opcode, size, exec, read)
 #define _PUT_INT_(value) {code.resize(code.size()+_INT_SIZE_); \
     *((int32_t*)&(code.data()[code.size()-_INT_SIZE_])) = value;}
 #define _PUSH_INT_ _PUT_INT_(cmd.args[iarg++])
-#define _POP_VAR_ARG_ (func->code[++pc])
-#define _POP_VAR_VAL_ (vars[func->code[++pc]])
-#define _POP_INT_ARG_ (*(uint32_t*)&(func->code.data()[(pc+=4)-3]))
+#define _POP_VAR_ARG_ (func.code[++pc])
+#define _POP_VAR_VAL_ (vars[func.code[++pc]])
+#define _POP_INT_ARG_ (*(uint32_t*)&(func.code.data()[(pc+=4)-3]))
 
 #define _DO_JMP_ { \
     int tmp = _POP_INT_ARG_; DEB("dojmp" << tmp) \
@@ -32,5 +32,5 @@ _CMD_DEF_(INPUT, 9, 2, {auto varind = _POP_VAR_ARG_; std::cout << "input: "; std
 _CMD_DEF_(MOV, 10, 3, {int vard = _POP_VAR_ARG_; int src=_POP_VAR_VAL_; vars[vard] = src;}, {_PUSH_VAR_ _PUSH_VAR_})
 _CMD_DEF_(JLE, 11, 7, {int lhs=_POP_VAR_VAL_; int rhs=_POP_VAR_VAL_; if (lhs<=rhs) _DO_JMP_}, {_PUSH_VAR_ _PUSH_VAR_ _PUSH_LABEL_OFFSET_})
  
-_CMD_DEF_(CALL1, 12, 7, {int vard = _POP_VAR_ARG_; int funcind = _POP_INT_ARG_; int arg = _POP_VAR_VAL_; Frame fr(functions[funcind], {arg}); vars[vard] = fr.run();}, {_PUSH_VAR_ _PUSH_INT_ _PUSH_VAR_})
+_CMD_DEF_(CALL1, 12, 7, {int vard = _POP_VAR_ARG_; int funcind = _POP_INT_ARG_; int arg = _POP_VAR_VAL_; Frame fr(interp.functions[funcind], {arg}); vars[vard] = fr.run(interp);}, {_PUSH_VAR_ _PUSH_INT_ _PUSH_VAR_})
 _CMD_DEF_(RET, 13, 2, { return vars[_POP_VAR_ARG_];}, {_PUSH_VAR_})

@@ -35,6 +35,7 @@ public:
     size_t num_params;
     Function(size_t nvars, size_t nparams, std::vector<CmdEntry> cmds)
         : num_vars(nvars), num_params(nparams) {
+        // TODO remove doubled code
         std::unordered_map<int, size_t> labels_map;
         for (const auto &cmd:cmds) {
             int pc = code.size();
@@ -76,38 +77,47 @@ public:
     }
 };
 
-// TODO move to class Executor instead of globals
-std::vector<Function*> functions = {nullptr};
-std::unordered_map<std::string, int> funcmap;
+class Interpreter;
 
 class Frame {
 public:
-    const Function *func;
+    const Function &func;
     std::vector<int32_t> vars;
     int pc;
     int new_pc;
-    int run() {
-        new_pc = 0;
-        while (true) {
-            pc = new_pc;
-            switch (func->code[pc]) {
-                #define _CMD_DEF_(name, opcode, size, exec, read) {\
-                case InstrOpcodeNS::name: \
-                    auto old_pc = pc; \
-                    new_pc = pc + size; \
-                    DEB(#name << pc << ' ' << new_pc); \
-                    exec \
-                    DEB(#name << pc << ' ' << new_pc); \
-                    continue; }
-                #include "cmds.hpp"
-            }
-        }
-    }
-    Frame(Function *func_) : func(func_), vars(std::vector<int32_t>(func->num_vars)), pc(0) {}
-    Frame(Function *func_, std::vector<int32_t> params) : func(func_), vars(std::vector<int32_t>(func->num_vars)), pc(0) {
+    Frame(const Function &func_) : func(func_), vars(std::vector<int32_t>(func.num_vars)), pc(0) {}
+    Frame(const Function &func_, std::vector<int32_t> params) : func(func_), vars(std::vector<int32_t>(func.num_vars)), pc(0) {
         std::copy(params.begin(), params.end(), vars.begin());
     }
+    int run(Interpreter &executor);
 };
+
+class Interpreter {
+public:
+    std::vector<Function> functions;
+    int run_func(size_t func_ind, std::vector<int32_t> params={}) {
+        Frame fr(functions[func_ind], params);
+        return fr.run(*this);
+    }
+};
+
+int Frame::run(Interpreter &interp) {
+    new_pc = 0;
+    while (true) {
+        pc = new_pc;
+        switch (func.code[pc]) {
+            #define _CMD_DEF_(name, opcode, size, exec, read) {\
+            case InstrOpcodeNS::name: \
+                auto old_pc = pc; \
+                new_pc = pc + size; \
+                DEB(#name << pc << ' ' << new_pc); \
+                exec \
+                DEB(#name << pc << ' ' << new_pc); \
+                continue; }
+            #include "cmds.hpp"
+        }
+    }
+}
 
 int main() {
     int status=0;
@@ -130,7 +140,7 @@ int main() {
         {INPUT, {1}},
         {ADD, {1, 1, 0}},
         {PRINT, {1}},
-        {EXIT, {}}
+        {RET, {1}}
     });
     Function fib_iter_func(3, 0, {
         // v0 i v1 n v2 f0 v3 f1 v4 t
@@ -147,7 +157,7 @@ int main() {
 //        {PRINT, {3}},
         {JLE, {0, 1, 'l'}},
         {PRINT, {3}},
-        {EXIT, {}}
+        {RET, {3}}
     });
 
     Function fib_rec_func(5, 1, {
@@ -156,26 +166,27 @@ int main() {
         {JLE, {0, 4, 's'}},
         {STORE, {4, -1}},
         {ADD, {0, 0, 4}},
-        {CALL1, {2, 1, 0}}, // fib(n-1)
-        {PRINT, {0}},
-        {PRINT, {2}},
+        {CALL1, {2, 2, 0}}, // fib(n-1)
+       //  {PRINT, {0}},
+       // {PRINT, {2}},
         {ADD, {0, 0, 4}},
-        {CALL1, {3, 1, 0}}, // fib(n-2)
-        {PRINT, {0}},
-        {PRINT, {3}},
+        {CALL1, {3, 2, 0}}, // fib(n-2)
+       // {PRINT, {0}},
+       // {PRINT, {3}},
         {ADD, {2, 2, 3}},
         {RET, {2}},
         {LABEL, {'s'}},
         {RET, {0}}
     });
 
-    Frame fr(&fib_iter_func);
-    std::cout << "run\n";
- //   fr.run();
-    std::cout << "recurs\n";
-    functions = {nullptr, &fib_rec_func};
-    Frame frec(&fib_rec_func, {11});
-    std::cout << frec.run();
-    std::cout << "exit\n";
+    Interpreter interp;
+    interp.functions = {main_func, fib_iter_func, fib_rec_func};
+
+    std::cout << "count from 10 to input:\n";
+    interp.run_func(0);
+    std::cout << "iter fib(input): ";
+    interp.run_func(1);
+    std::cout << "recursive fib(11): " << interp.run_func(2, {11}) << '\n';
+    std::cout << "finishing..";
     return status;
 }
