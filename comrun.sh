@@ -1,1 +1,1 @@
-clang++ main.cpp && ./a.out
+clang++ main.cpp -Wno-c99-designator && ./a.out

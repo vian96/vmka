@@ -28,7 +28,8 @@ typedef int32_t RegType;
 
 struct CmdEntry {
     InstrOpcodeNS::InstrOpcode opc;
-    std::vector<int> args;
+    uint8_t rd, rs1, rs2;
+    RegType im;
 };
 
 struct CallArgs {
@@ -50,8 +51,8 @@ std::vector<uint8_t> build_bytecode(std::vector<CmdEntry> cmds) {
         int pc = code.size();
         switch (cmd.opc) {
             case InstrOpcodeNS::LABEL:
-                labels_map[cmd.args[0]] = code.size();
-                DEB((char) cmd.args[0] << code.size())
+                labels_map[cmd.im] = code.size();
+                DEB((char) cmd.im << code.size())
                 continue;
             #include "cmds.hpp"
             #undef _GET_LABEL_
@@ -133,65 +134,65 @@ int main() {
     std::cout << "parse\n";
     
     auto main_code = build_bytecode({
-        {STORE, {0, 10}},
+        {STORE, 0, .im=10},
 //        {STORE, {1, 17}},
-        {INPUT, {1}},
-        {LABEL, {'s'}},
-        {INC, {0}},
-        {PRINT, {0}},
-        {JEQ, {0, 1, 'e'}},
-        {JMP, {'s'}},
-        {LABEL, {'e'}},
-        {EXIT, {}}
+        {INPUT, 1},
+        {LABEL, .im='s'},
+        {INC, 0},
+        {PRINT, .rs1=0},
+        {JEQ, .rs1=0, .rs2=1, .im='e'},
+        {JMP, .im='s'},
+        {LABEL, .im='e'},
+        {EXIT}
     });
     Function main_func(3, 0, main_code.data());
 
     auto sum_code = build_bytecode({
-        {STORE, {0, 10}},
-        {INPUT, {1}},
-        {ADD, {1, 1, 0}},
-        {PRINT, {1}},
-        {RET, {1}}
+        {STORE, 0, .im=10},
+        {INPUT, 1},
+        {ADD, 1, 1, 0},
+        {PRINT, .rs1=1},
+        {RET, .rs1=1}
     });
     Function sum_func(3, 0, sum_code.data());
 
     auto fib_iter_code = build_bytecode({
         // v0 i v1 n v2 f0 v3 f1 v4 t
-        {INPUT, {1}},
-        {STORE, {0, 2}},
-        {STORE, {2, 0}},
-        {STORE, {3, 1}},
-        {LABEL, {'l'}},
-        {ADD, {4, 2, 3}},
+        {INPUT, 1},
+        {STORE, 0, .im=2},
+        {STORE, 2, .im=0},
+        {STORE, 3, .im=1},
+        {LABEL, .im='l'},
+        {ADD, 4, 2, 3},
 //        {PRINT, {4}},
-        {MOV, {2, 3}},
-        {MOV, {3, 4}},
-        {INC, {0}},
+        {MOV, 2, 3},
+        {MOV, 3, 4},
+        {INC, 0},
 //        {PRINT, {3}},
-        {JLE, {0, 1, 'l'}},
-        {PRINT, {3}},
-        {RET, {3}}
+        {JLE, .rs1=0, .rs2=1, .im='l'},
+        {PRINT, .rs1=3},
+        {RET, .rs1=3}
     });
     Function fib_iter_func(3, 0, fib_iter_code.data());
  
     auto fib_rec_code = build_bytecode({
         // v0 n v1 n-1(-2) v2 fib(n-1) v3 fib(n-2) v4 -1holder
-        {STORE, {4, 1}},
-        {JLE, {0, 4, 's'}},
-        {STORE, {4, -1}},
-        {ADD, {0, 0, 4}},
+        {STORE, 4, .im=1},
+        {JLE, .rs1=0, .rs2=4, .im='s'},
+        {STORE, 4, .im=-1},
+        {ADD, 0, 0, 4},
       //  {PRINT, {0}},
-        {CALL1, {2, 2, 0}}, // fib(n-1)
+        {CALL1, 2, .rs1=0, .im=2}, // fib(n-1)
        //  {PRINT, {0}},
        // {PRINT, {2}},
-        {ADD, {0, 0, 4}},
-        {CALL1, {3, 2, 0}}, // fib(n-2)
+        {ADD, 0, 0, 4},
+        {CALL1, 3, .rs1=0, .im=2}, // fib(n-2)
        // {PRINT, {0}},
        // {PRINT, {3}},
-        {ADD, {2, 2, 3}},
-        {RET, {2}},
-        {LABEL, {'s'}},
-        {RET, {0}}
+        {ADD, 2, 2, 3},
+        {RET, .rs1=2},
+        {LABEL, .im='s'},
+        {RET, .rs1=0}
     });
     Function fib_rec_func(5, 1, fib_rec_code.data());
  
