@@ -98,7 +98,13 @@ class Runtime {
 public:
     std::vector<Function> functions;
     Frame *frame;
+    size_t num_of_calls = 0;
+    const static size_t MAX_NUM_OF_CALLS = 100;
     RegType run_func(size_t func_ind, CallArgs args) {
+        if (num_of_calls > MAX_NUM_OF_CALLS) {
+            std::cerr << "max number of calls exceeded\n";
+            exit(1);
+        }
         auto &func = functions[func_ind];
         frame = new(alloca(sizeof(Frame) + func.num_vars*sizeof(RegType))) Frame(frame, func);
         if (frame->func.num_params)
